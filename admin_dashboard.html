@@ -1,0 +1,268 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Twitterville Dating{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+        body {
+            font-family: "Poppins", sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .dark-mode {
+            background: linear-gradient(to bottom, #0f172a, #1e293b);
+            color: #f8fafc;
+        }
+
+        .light-mode {
+            background: linear-gradient(to bottom, #f1f5f9, #e2e8f0);
+            color: #111827;
+        }
+
+        .navbar {
+            background: linear-gradient(90deg, #ec4899, #8b5cf6);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar a {
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .navbar a:hover {
+            background-color: #8b5cf6;
+        }
+
+        .navbar a.active {
+            background-color: #ec4899;
+        }
+
+        .heart-icon {
+            color: #ec4899;
+        }
+
+        .dark .heart-icon {
+            color: #f472b6;
+        }
+
+        .lovely-member-section {
+            background: linear-gradient(to bottom right, #ffe4e6, #e9d5ff);
+        }
+
+        .dark .lovely-member-section {
+            background: linear-gradient(to bottom right, #2d1b4e, #4a366b);
+        }
+
+        .heart-icon {
+            color: #ec4899;
+        }
+
+        .dark .heart-icon {
+            color: #f472b6;
+        }
+    </style>
+</head>
+
+<body class="{% if request.session.theme == 'dark' %}dark-mode{% else %}light-mode{% endif %}">
+
+    <!-- Navigation Bar -->
+    <nav class="navbar shadow-lg flex items-center justify-between">
+        <a href="{% url 'dating:admin_dashboard' %}" class="logo-container flex items-center space-x-2">
+            <i class="fas fa-heart text-2xl text-white logo-icon"></i>
+            <span class="text-xl font-bold text-white">Twitterville</span>
+        </a>
+        <div class="flex space-x-6">
+            <a href="{% url 'dating:admin_dashboard' %}" class="text-white hover:text-pink-200 transition-colors 
+            {% if request.path == '/admin_dashboard/' %} active {% endif %}">
+                Posts / View Users
+            </a>
+            
+            <a href="{% url 'dating:logout' %}" class="text-white hover:text-pink-200 transition-colors">
+                Logout
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Title -->
+        <h1 class="text-4xl font-bold mb-6">Twitterville Admin Dashboard</h1>
+
+        <!-- Search Bar Form -->
+        <div class="flex justify-between mb-8">
+            <form method="GET" action="{% url 'dating:admin_dashboard' %}" class="flex space-x-4 w-full md:w-2/3">
+                <!-- Search Box -->
+                <input type="text" name="search" placeholder="Search by name, email..."
+                    value="{{ search_query }}" class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-pink-500 dark:bg-slate-700 dark:text-white">
+
+                <!-- Date Filters -->
+                <input type="date" name="date_from" value="{{ date_from }}"
+                    class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none dark:bg-slate-700 dark:text-white">
+                <input type="date" name="date_to" value="{{ date_to }}"
+                    class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none dark:bg-slate-700 dark:text-white">
+
+                <!-- Gender Filter -->
+                <select name="gender"
+                    class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white">
+                    <option value="all" {% if gender_filter == 'all' %}selected{% endif %}>All</option>
+                    <option value="M" {% if gender_filter == 'M' %}selected{% endif %}>Male</option>
+                    <option value="F" {% if gender_filter == 'F' %}selected{% endif %}>Female</option>
+                    <option value="O" {% if gender_filter == 'O' %}selected{% endif %}>Other</option>
+                </select>
+
+                <button type="submit"
+                    class="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors">Apply Filters</button>
+            </form>
+        </div>
+
+
+        <!-- Users Section -->
+        <div class="lovely-member-section mb-12 p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+                <i class="fas fa-users mr-2 heart-icon"></i> User Management
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gradient-to-r from-pink-500 to-purple-500 text-white">
+                            <th class="p-3 text-sm font-semibold rounded-tl-lg">Username</th>
+                            <th class="p-3 text-sm font-semibold">Email</th>
+                            <th class="p-3 text-sm font-semibold">Location</th>
+                            <th class="p-3 text-sm font-semibold rounded-tr-lg">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users_qs %}
+                        <tr class="border-b border-gray-200 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors">
+                            <td class="p-3 text-sm text-gray-900 dark:text-white">
+                                <a href="{% url 'dating:user_profile' user.username %}" class="hover:text-pink-500 dark:hover:text-pink-400">
+                                    {{ user.username }}
+                                </a>
+                            </td>
+                            <td class="p-3 text-sm text-gray-600 dark:text-gray-300">{{ user.email|default:'N/A' }}</td>
+                            <td class="p-3 text-sm text-gray-600 dark:text-gray-300">{{ user.location|default:'Unknown' }}</td>
+                            <td class="p-3 text-sm">
+                                <div class="flex space-x-2">
+                                    <button class="open-modal bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white px-3 py-1 rounded-full text-xs transition-colors"
+                                        data-modal-id="userActionModal-{{ user.id }}">
+                                        {% if user.is_active %}
+                                        Suspend
+                                        {% else %}
+                                        Activate
+                                        {% endif %}
+                                    </button>
+                                    <a href="{% url 'dating:user_profile' user.username %}"
+                                        class="bg-gray-200 dark:bg-slate-600 hover:bg-gray-300 dark:hover:bg-slate-500 text-gray-900 dark:text-white px-3 py-1 rounded-full text-xs transition-colors">
+                                        View
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="p-3 text-gray-500 dark:text-gray-300 text-sm text-center">No users found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Posts Section -->
+        <div class="lovely-member-section p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+                <i class="fas fa-file-alt mr-2 heart-icon"></i> Post Management
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gradient-to-r from-pink-500 to-purple-500 text-white">
+                            <th class="p-3 text-sm font-semibold rounded-tl-lg">Author</th>
+                            <th class="p-3 text-sm font-semibold">Content</th>
+                            <th class="p-3 text-sm font-semibold">Image</th>
+                            <th class="p-3 text-sm font-semibold">Tags</th>
+                            <th class="p-3 text-sm font-semibold">Pinned</th>
+                            <th class="p-3 text-sm font-semibold">Archived</th>
+                            <th class="p-3 text-sm font-semibold">Likes</th>
+                            <th class="p-3 text-sm font-semibold">Views</th>
+                            <th class="p-3 text-sm font-semibold">Shares</th>
+                            <th class="p-3 text-sm font-semibold rounded-tr-lg">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for post in posts_qs %}
+                        <tr class="border-b border-gray-200 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors">
+                            <td class="p-3 text-sm text-gray-900 dark:text-white">
+                                <a href="{% url 'dating:user_profile' post.user.username %}" class="hover:text-pink-500 dark:hover:text-pink-400">
+                                    {{ post.user.username }}
+                                </a>
+                            </td>
+                            <td class="p-3 text-sm text-gray-600 dark:text-gray-300 truncate max-w-xs">{{ post.content }}</td>
+                            <td class="p-3 text-sm">
+                                {% if post.image %}
+                                <img src="{{ post.image.url }}" alt="Post Image" class="w-16 h-16 object-cover rounded-lg" />
+                                {% else %}
+                                <span class="text-gray-500 dark:text-gray-300">No Image</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-3 text-sm text-gray-600 dark:text-gray-300">{{ post.tags|default:'None' }}</td>
+                            <td class="p-3 text-sm text-gray-600 dark:text-gray-300">
+                                {% if post.is_pinned %}
+                                <i class="fas fa-thumbtack text-pink-500 dark:text-pink-400"></i> Yes
+                                {% else %}
+                                No
+                                {% endif %}
+                            </td>
+                            <td class="p-3 text-sm text-gray-600 dark:text-gray-300">
+                                {% if post.is_archived %}
+                                <i class="fas fa-archive text-pink-500 dark:text-pink-400"></i> Yes
+                                {% else %}
+                                No
+                                {% endif %}
+                            </td>
+                            <td class="p-3 text-sm text-gray-600 dark:text-gray-300">{{ post.likes_count }}</td>
+                            <td class="p-3 text-sm text-gray-600 dark:text-gray-300">{{ post.views_count }}</td>
+                            <td class="p-3 text-sm text-gray-600 dark:text-gray-300">{{ post.shares_count }}</td>
+                            <td class="p-3 text-sm">
+                                <div class="flex space-x-2">
+                                    <button class="open-modal bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white px-3 py-1 rounded-full text-xs transition-colors" data-modal-id="pinPostModal-{{ post.id }}">
+                                        {% if post.is_pinned %}Unpin{% else %}Pin{% endif %}
+                                    </button>
+                                    <button class="open-modal bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white px-3 py-1 rounded-full text-xs transition-colors" data-modal-id="archivePostModal-{{ post.id }}">
+                                        {% if post.is_archived %}Unarchive{% else %}Archive{% endif %}
+                                    </button>
+                                    <button class="open-modal bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-full text-xs transition-colors" data-modal-id="deletePostModal-{{ post.id }}">
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="p-3 text-gray-500 dark:text-gray-300 text-sm text-center">No posts found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
