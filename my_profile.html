@@ -1,0 +1,126 @@
+{% extends 'dating/user_base.html' %}
+{% block title %}Twitterville - My Profile{% endblock %}
+{% block content %}
+<style>
+    .max-w-4xl {
+        max-width: 56rem;
+        display: flex;
+        gap: 40px; /* This defines the space between items inside the flex container */
+         /* This will allow items to wrap if needed */
+    }
+</style>
+    <!-- User Profile -->
+    <div class="profile-card max-w-2xl mx-auto p-6 mb-12">
+        <div class="flex items-center space-x-6">
+            <img src="{% if request.user.profile_picture %}{{ request.user.profile_picture.url }}{% else %}https://via.placeholder.com/150{% endif %}" alt="Profile" class="w-24 h-24 rounded-full object-cover border-2 border-pink-500" />
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ request.user.username }}</h2>
+                <p class="text-gray-600 dark:text-gray-300">{{ request.user.bio|default:'No bio available' }}</p>
+            </div>
+        </div>
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <p class="text-gray-600 dark:text-gray-300"><i class="fas fa-map-marker-alt mr-2"></i> {{ request.user.location|default:'Unknown' }}</p>
+            <p class="text-gray-600 dark:text-gray-300"><i class="fas fa-venus-mars mr-2"></i> {{ request.user.get_gender_display|default:'Not specified' }}</p>
+            <p class="text-gray-600 dark:text-gray-300"><i class="fas fa-heart mr-2"></i> Interests: {{ request.user.interests|default:'None' }}</p>
+            <p class="text-gray-600 dark:text-gray-300"><i class="fas fa-users mr-2"></i> Preferences: {{ request.user.get_preferences_display|default:'Any' }}</p>
+        </div>
+        <button onclick="openModal('profileModal')" class="mt-4 bg-pink-500 hover:bg-pink-600 text-white px-6 py-2 rounded-full text-sm font-medium transition-colors">
+            Edit Profile
+        </button>
+    </div>
+
+    <!-- User Posts -->
+    <h2 class="text-2xl font-bold text-pink-500 dark:text-pink-400 mb-6 text-center">My Posts</h2>
+    <div class="max-w-4xl mx-auto">
+        {% for post in posts %}
+        <div class="post-card p-6 mb-6">
+            {% if post.image %}
+            <img src="{{ post.image.url }}" alt="Post Image" class="w-full h-64 object-cover rounded-lg mb-4" />
+            {% endif %}
+            <p class="text-gray-900 dark:text-white">{{ post.content }}</p>
+            {% if post.tags %}
+            <p class="text-gray-600 dark:text-gray-300 text-sm mt-2">Tags: {{ post.tags }}</p>
+            {% endif %}
+            <div class="flex justify-between items-center mt-4">
+                <div class="text-gray-500 dark:text-gray-300 text-sm">
+                    <i class="fas fa-clock mr-1"></i> {{ post.created_at|date:"F d, Y H:i" }}
+                </div>
+                <div class="flex space-x-4">
+                    <span class="text-gray-500 dark:text-gray-300"><i class="fas fa-heart mr-1"></i> {{ post.likes_count }}</span>
+                    <span class="text-gray-500 dark:text-gray-300"><i class="fas fa-eye mr-1"></i> {{ post.views_count }}</span>
+                    <span class="text-gray-500 dark:text-gray-300"><i class="fas fa-share mr-1"></i> {{ post.shares_count }}</span>
+                </div>
+            </div>
+            <button onclick="openPostModal({{ post.id }}, '{{ post.content|escapejs }}', '{{ post.tags|default:''|escapejs }}', '{{ post.image.url|default:''|escapejs }}')" class="mt-4 border border-pink-500 text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-900 dark:text-pink-300 px-4 py-1 rounded-full text-sm font-medium transition-colors">
+                Edit Post
+            </button>
+        </div>
+        {% empty %}
+        <p class="text-center text-gray-500 dark:text-gray-300">No posts yet.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Profile Edit Modal -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4 dark:text-white">Edit Profile</h2>
+            <form method="POST" enctype="multipart/form-data" action="{% url 'dating:edit_profile' %}">
+                {% csrf_token %}
+                {{ profile_form.as_p }}
+                <input type="hidden" name="profile_submit" value="1">
+                <div class="flex justify-end space-x-4 mt-4">
+                    <button type="button" onclick="closeModal('profileModal')" class="border border-gray-300 dark:border-slate-600 text-gray-500 dark:text-gray-300 px-4 py-1 rounded-full">Cancel</button>
+                    <button type="submit" class="bg-pink-500 hover:bg-pink-600 text-white px-4 py-1 rounded-full">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Post Edit Modal -->
+    <div id="postModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4 dark:text-white">Edit Post</h2>
+            <form id="postEditForm" method="POST" enctype="multipart/form-data" action="">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="postContent" class="block text-gray-700 dark:text-gray-300">Content</label>
+                    <textarea id="postContent" name="content" rows="4" class="w-full border rounded p-2 dark:bg-slate-800 dark:text-white"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="postImage" class="block text-gray-700 dark:text-gray-300">Image</label>
+                    <input type="file" id="postImage" name="image" class="w-full border rounded p-2 dark:bg-slate-800 dark:text-white" accept="image/*">
+                    <p id="currentImage" class="text-sm text-gray-500 dark:text-gray-300 mt-1"></p>
+                </div>
+                <div class="mb-4">
+                    <label for="postTags" class="block text-gray-700 dark:text-gray-300">Tags</label>
+                    <input type="text" id="postTags" name="tags" class="w-full border rounded p-2 dark:bg-slate-800 dark:text-white" placeholder="e.g., travel, fun">
+                </div>
+                <input type="hidden" name="post_id" id="postId">
+                <input type="hidden" name="post_submit" value="1">
+                <div class="flex justify-end space-x-4">
+                    <button type="button" onclick="closeModal('postModal')" class="border border-gray-300 dark:border-slate-600 text-gray-500 dark:text-gray-300 px-4 py-1 rounded-full">Cancel</button>
+                    <button type="submit" class="bg-pink-500 hover:bg-pink-600 text-white px-4 py-1 rounded-full">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+{% block extra_js %}
+    // Modal Functions
+    function openModal(modalId) {
+        document.getElementById(modalId).style.display = 'flex';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    function openPostModal(postId, content, tags, imageUrl) {
+        document.getElementById('postId').value = postId;
+        document.getElementById('postContent').value = content;
+        document.getElementById('postTags').value = tags;
+        document.getElementById('currentImage').textContent = imageUrl ? `Current: ${imageUrl}` : 'No image uploaded';
+        document.getElementById('postEditForm').action = `/edit_post/${postId}/`;
+        openModal('postModal');
+    }
+{% endblock %}
